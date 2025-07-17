@@ -149,14 +149,31 @@ class AurumFinanceAPITester:
         temp_token = self.auth_token
         self.auth_token = None
         
-        response = self.make_request("GET", "/me")
+        response = self.make_request("GET", "/me", timeout=15)
         
         if response and response.status_code in [401, 403]:
             self.log_result("Unauthorized Access Protection", True, f"Correctly rejected unauthorized request (Status: {response.status_code})")
             success = True
-        else:
-            self.log_result("Unauthorized Access Protection", False, f"Expected 401/403, got {response.status_code if response else 'None'}")
+        elif response:
+            self.log_result("Unauthorized Access Protection", False, f"Expected 401/403, got {response.status_code}")
             success = False
+        else:
+            # If no response due to timeout, try a simpler test
+            print("Retrying unauthorized access test with different approach...")
+            import requests
+            try:
+                response = requests.get(f"{self.base_url}/me", 
+                                      headers={"Content-Type": "application/json"}, 
+                                      timeout=10)
+                if response.status_code in [401, 403]:
+                    self.log_result("Unauthorized Access Protection", True, f"Correctly rejected unauthorized request (Status: {response.status_code})")
+                    success = True
+                else:
+                    self.log_result("Unauthorized Access Protection", False, f"Expected 401/403, got {response.status_code}")
+                    success = False
+            except:
+                self.log_result("Unauthorized Access Protection", False, "Could not test unauthorized access due to network issues")
+                success = False
         
         # Restore auth token
         self.auth_token = temp_token
