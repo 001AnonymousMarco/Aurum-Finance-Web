@@ -1735,7 +1735,7 @@ const Layout = () => {
       case 'reports':
         return <Reports />;
       case 'settings':
-        return <Settings />;
+        return <SettingsPage />;
       default:
         return <Dashboard />;
     }
