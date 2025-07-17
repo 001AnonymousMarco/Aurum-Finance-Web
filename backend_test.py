@@ -450,6 +450,313 @@ class AurumFinanceAPITester:
                 error_msg = response.text if response else "No response"
                 self.log_result("Update Savings Goal", False, f"Status: {response.status_code if response else 'None'}, Error: {error_msg}")
     
+    def test_enhanced_transaction_features(self):
+        """Test enhanced transaction features: filtering, recurring transactions"""
+        print("\n=== Testing Enhanced Transaction Features ===")
+        
+        # Create test transactions with different dates and categories
+        test_transactions = [
+            {
+                "type": "income",
+                "amount": 3000.00,
+                "description": "Freelance Project Payment",
+                "category": "freelance",
+                "date": (datetime.now() - timedelta(days=30)).isoformat()
+            },
+            {
+                "type": "expense",
+                "amount": 150.00,
+                "description": "Grocery Shopping",
+                "category": "food",
+                "date": (datetime.now() - timedelta(days=15)).isoformat()
+            },
+            {
+                "type": "expense",
+                "amount": 80.00,
+                "description": "Gas Station",
+                "category": "transport",
+                "date": datetime.now().isoformat()
+            }
+        ]
+        
+        # Create test transactions
+        created_ids = []
+        for transaction_data in test_transactions:
+            response = self.make_request("POST", "/transactions", transaction_data)
+            if response and response.status_code == 200:
+                created_ids.append(response.json()["id"])
+        
+        # Test date range filtering
+        start_date = (datetime.now() - timedelta(days=20)).isoformat()
+        end_date = datetime.now().isoformat()
+        
+        response = self.make_request("GET", f"/transactions?start_date={start_date}&end_date={end_date}")
+        
+        if response and response.status_code == 200:
+            data = response.json()
+            if isinstance(data, list):
+                # Should get transactions from last 20 days (2 transactions)
+                filtered_count = len([t for t in data if t["category"] in ["food", "transport"]])
+                if filtered_count >= 2:
+                    self.log_result("Transaction Date Range Filtering", True, f"Retrieved {filtered_count} transactions in date range")
+                else:
+                    self.log_result("Transaction Date Range Filtering", False, f"Expected 2+ transactions, got {filtered_count}")
+            else:
+                self.log_result("Transaction Date Range Filtering", False, "Expected list response")
+        else:
+            error_msg = response.text if response else "No response"
+            self.log_result("Transaction Date Range Filtering", False, f"Status: {response.status_code if response else 'None'}, Error: {error_msg}")
+        
+        # Test category filtering
+        response = self.make_request("GET", "/transactions?category=food")
+        
+        if response and response.status_code == 200:
+            data = response.json()
+            if isinstance(data, list):
+                food_transactions = [t for t in data if t["category"] == "food"]
+                if len(food_transactions) >= 1:
+                    self.log_result("Transaction Category Filtering", True, f"Retrieved {len(food_transactions)} food transactions")
+                else:
+                    self.log_result("Transaction Category Filtering", False, "No food transactions found")
+            else:
+                self.log_result("Transaction Category Filtering", False, "Expected list response")
+        else:
+            error_msg = response.text if response else "No response"
+            self.log_result("Transaction Category Filtering", False, f"Status: {response.status_code if response else 'None'}, Error: {error_msg}")
+        
+        # Test search query filtering
+        response = self.make_request("GET", "/transactions?search_query=Grocery")
+        
+        if response and response.status_code == 200:
+            data = response.json()
+            if isinstance(data, list):
+                grocery_transactions = [t for t in data if "Grocery" in t["description"]]
+                if len(grocery_transactions) >= 1:
+                    self.log_result("Transaction Search Query Filtering", True, f"Found {len(grocery_transactions)} transactions matching 'Grocery'")
+                else:
+                    self.log_result("Transaction Search Query Filtering", False, "No transactions found matching 'Grocery'")
+            else:
+                self.log_result("Transaction Search Query Filtering", False, "Expected list response")
+        else:
+            error_msg = response.text if response else "No response"
+            self.log_result("Transaction Search Query Filtering", False, f"Status: {response.status_code if response else 'None'}, Error: {error_msg}")
+        
+        # Test recurring transaction creation
+        recurring_data = {
+            "type": "expense",
+            "amount": 1200.00,
+            "description": "Monthly Rent Payment",
+            "category": "housing",
+            "date": datetime.now().isoformat(),
+            "is_recurring": True,
+            "frequency": "monthly",
+            "recurring_start_date": datetime.now().isoformat()
+        }
+        
+        response = self.make_request("POST", "/transactions", recurring_data)
+        
+        if response and response.status_code == 200:
+            data = response.json()
+            if data.get("is_recurring") == True and data.get("frequency") == "monthly":
+                self.log_result("Create Recurring Transaction", True, f"Created recurring transaction: {data['description']}")
+            else:
+                self.log_result("Create Recurring Transaction", False, "Recurring transaction fields not set correctly")
+        else:
+            error_msg = response.text if response else "No response"
+            self.log_result("Create Recurring Transaction", False, f"Status: {response.status_code if response else 'None'}, Error: {error_msg}")
+        
+        # Test process recurring transactions endpoint
+        response = self.make_request("POST", "/transactions/process-recurring", auth_required=False)
+        
+        if response and response.status_code == 200:
+            data = response.json()
+            if "message" in data and "Processed" in data["message"]:
+                self.log_result("Process Recurring Transactions", True, data["message"])
+            else:
+                self.log_result("Process Recurring Transactions", False, "Invalid response format")
+        else:
+            error_msg = response.text if response else "No response"
+            self.log_result("Process Recurring Transactions", False, f"Status: {response.status_code if response else 'None'}, Error: {error_msg}")
+    
+    def test_debt_management(self):
+        """Test debt management CRUD operations"""
+        print("\n=== Testing Debt Management ===")
+        
+        # Create debt
+        debt_data = {
+            "debt_name": "Credit Card - Chase Sapphire",
+            "total_balance": 4500.00,
+            "interest_rate": 18.99,
+            "minimum_payment": 150.00
+        }
+        
+        response = self.make_request("POST", "/debts", debt_data)
+        debt_id = None
+        
+        if response and response.status_code == 200:
+            data = response.json()
+            if "id" in data and "debt_name" in data and "total_balance" in data:
+                debt_id = data["id"]
+                self.log_result("Create Debt", True, f"Created debt: {data['debt_name']} - ${data['total_balance']}")
+            else:
+                self.log_result("Create Debt", False, "Invalid debt data returned")
+        else:
+            error_msg = response.text if response else "No response"
+            self.log_result("Create Debt", False, f"Status: {response.status_code if response else 'None'}, Error: {error_msg}")
+        
+        # Get all debts
+        response = self.make_request("GET", "/debts")
+        
+        if response and response.status_code == 200:
+            data = response.json()
+            if isinstance(data, list) and len(data) >= 1:
+                self.log_result("Get All Debts", True, f"Retrieved {len(data)} debts")
+            else:
+                self.log_result("Get All Debts", False, f"Expected list with 1+ items, got {type(data)} with {len(data) if isinstance(data, list) else 'unknown'} items")
+        else:
+            error_msg = response.text if response else "No response"
+            self.log_result("Get All Debts", False, f"Status: {response.status_code if response else 'None'}, Error: {error_msg}")
+        
+        # Update debt
+        if debt_id:
+            update_data = {
+                "debt_name": "Credit Card - Chase Sapphire (Updated)",
+                "total_balance": 4200.00,
+                "interest_rate": 18.99,
+                "minimum_payment": 140.00
+            }
+            
+            response = self.make_request("PUT", f"/debts/{debt_id}", update_data)
+            
+            if response and response.status_code == 200:
+                data = response.json()
+                if data["total_balance"] == 4200.00 and data["minimum_payment"] == 140.00:
+                    self.log_result("Update Debt", True, f"Debt updated: ${data['total_balance']} balance, ${data['minimum_payment']} minimum payment")
+                else:
+                    self.log_result("Update Debt", False, "Debt not updated correctly")
+            else:
+                error_msg = response.text if response else "No response"
+                self.log_result("Update Debt", False, f"Status: {response.status_code if response else 'None'}, Error: {error_msg}")
+        
+        # Delete debt
+        if debt_id:
+            response = self.make_request("DELETE", f"/debts/{debt_id}")
+            
+            if response and response.status_code == 200:
+                self.log_result("Delete Debt", True, "Debt deleted successfully")
+            else:
+                error_msg = response.text if response else "No response"
+                self.log_result("Delete Debt", False, f"Status: {response.status_code if response else 'None'}, Error: {error_msg}")
+    
+    def test_reports_endpoints(self):
+        """Test reports endpoints: cashflow and spending"""
+        print("\n=== Testing Reports Endpoints ===")
+        
+        # Create some test data for reports
+        # Create transactions across different months
+        test_data = [
+            {
+                "type": "income",
+                "amount": 5000.00,
+                "description": "Salary - Current Month",
+                "category": "salary",
+                "date": datetime.now().isoformat()
+            },
+            {
+                "type": "expense",
+                "amount": 1200.00,
+                "description": "Rent - Current Month",
+                "category": "housing",
+                "date": datetime.now().isoformat()
+            },
+            {
+                "type": "expense",
+                "amount": 300.00,
+                "description": "Groceries - Current Month",
+                "category": "food",
+                "date": datetime.now().isoformat()
+            },
+            {
+                "type": "income",
+                "amount": 4800.00,
+                "description": "Salary - Last Month",
+                "category": "salary",
+                "date": (datetime.now() - timedelta(days=35)).isoformat()
+            },
+            {
+                "type": "expense",
+                "amount": 1200.00,
+                "description": "Rent - Last Month",
+                "category": "housing",
+                "date": (datetime.now() - timedelta(days=35)).isoformat()
+            }
+        ]
+        
+        # Create test transactions
+        for transaction_data in test_data:
+            self.make_request("POST", "/transactions", transaction_data)
+        
+        # Test cashflow report
+        response = self.make_request("GET", "/reports/cashflow")
+        
+        if response and response.status_code == 200:
+            data = response.json()
+            if isinstance(data, list) and len(data) == 12:
+                # Check if we have proper structure
+                first_month = data[0]
+                required_fields = ["month", "month_name", "income", "expenses", "net"]
+                
+                if all(field in first_month for field in required_fields):
+                    self.log_result("Cashflow Report", True, f"Retrieved 12 months of cashflow data")
+                else:
+                    self.log_result("Cashflow Report", False, f"Missing required fields in cashflow data")
+            else:
+                self.log_result("Cashflow Report", False, f"Expected list with 12 items, got {len(data) if isinstance(data, list) else 'not a list'}")
+        else:
+            error_msg = response.text if response else "No response"
+            self.log_result("Cashflow Report", False, f"Status: {response.status_code if response else 'None'}, Error: {error_msg}")
+        
+        # Test spending report with date range
+        start_date = (datetime.now() - timedelta(days=30)).isoformat()
+        end_date = datetime.now().isoformat()
+        
+        response = self.make_request("GET", f"/reports/spending?start_date={start_date}&end_date={end_date}")
+        
+        if response and response.status_code == 200:
+            data = response.json()
+            required_fields = ["total_spent", "categories", "date_range"]
+            
+            if all(field in data for field in required_fields):
+                if isinstance(data["categories"], list) and len(data["categories"]) > 0:
+                    # Check category structure
+                    first_category = data["categories"][0]
+                    category_fields = ["category", "amount", "percentage"]
+                    
+                    if all(field in first_category for field in category_fields):
+                        self.log_result("Spending Report", True, f"Retrieved spending data: ${data['total_spent']} total, {len(data['categories'])} categories")
+                    else:
+                        self.log_result("Spending Report", False, "Invalid category structure in spending report")
+                else:
+                    self.log_result("Spending Report", False, "No categories found in spending report")
+            else:
+                self.log_result("Spending Report", False, f"Missing required fields in spending report")
+        else:
+            error_msg = response.text if response else "No response"
+            self.log_result("Spending Report", False, f"Status: {response.status_code if response else 'None'}, Error: {error_msg}")
+        
+        # Test spending report without date parameters (should default to current month)
+        response = self.make_request("GET", "/reports/spending")
+        
+        if response and response.status_code == 200:
+            data = response.json()
+            if "total_spent" in data and "categories" in data:
+                self.log_result("Spending Report (Default Date Range)", True, f"Retrieved default spending data: ${data['total_spent']} total")
+            else:
+                self.log_result("Spending Report (Default Date Range)", False, "Invalid response structure")
+        else:
+            error_msg = response.text if response else "No response"
+            self.log_result("Spending Report (Default Date Range)", False, f"Status: {response.status_code if response else 'None'}, Error: {error_msg}")
+
     def test_dashboard_analytics(self):
         """Test dashboard analytics endpoint"""
         print("\n=== Testing Dashboard Analytics ===")
