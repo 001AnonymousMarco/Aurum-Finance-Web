@@ -536,6 +536,90 @@ async def get_dashboard_summary(current_user: User = Depends(get_current_user)):
         "expense_breakdown": expense_breakdown
     }
 
+# Reports endpoints
+@api_router.get("/reports/cashflow")
+async def get_cashflow_report(current_user: User = Depends(get_current_user)):
+    """Get cash flow data for the last 12 months"""
+    results = []
+    
+    for i in range(12):
+        # Calculate the target month/year
+        target_date = datetime.now().replace(day=1) - timedelta(days=i*30)
+        target_month = target_date.month
+        target_year = target_date.year
+        
+        # Get transactions for this month
+        transactions = await db.transactions.find({
+            "user_id": current_user.id,
+            "$expr": {
+                "$and": [
+                    {"$eq": [{"$month": "$date"}, target_month]},
+                    {"$eq": [{"$year": "$date"}, target_year]}
+                ]
+            }
+        }).to_list(1000)
+        
+        # Calculate totals
+        income = sum(t["amount"] for t in transactions if t["type"] == "income")
+        expenses = sum(t["amount"] for t in transactions if t["type"] == "expense")
+        
+        results.append({
+            "month": target_date.strftime("%Y-%m"),
+            "month_name": target_date.strftime("%B %Y"),
+            "income": income,
+            "expenses": expenses,
+            "net": income - expenses
+        })
+    
+    return list(reversed(results))
+
+@api_router.get("/reports/spending")
+async def get_spending_report(
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    current_user: User = Depends(get_current_user)
+):
+    """Get spending breakdown by category for a date range"""
+    # Default to current month if no dates provided
+    if not start_date:
+        start_date = datetime.now().replace(day=1).isoformat()
+    if not end_date:
+        end_date = datetime.now().isoformat()
+    
+    # Build query
+    query = {
+        "user_id": current_user.id,
+        "type": "expense",
+        "date": {
+            "$gte": datetime.fromisoformat(start_date.replace('Z', '+00:00')),
+            "$lte": datetime.fromisoformat(end_date.replace('Z', '+00:00'))
+        }
+    }
+    
+    transactions = await db.transactions.find(query).to_list(1000)
+    
+    # Group by category
+    category_totals = {}
+    for transaction in transactions:
+        category = transaction["category"]
+        category_totals[category] = category_totals.get(category, 0) + transaction["amount"]
+    
+    # Format for frontend
+    results = [
+        {
+            "category": category,
+            "amount": amount,
+            "percentage": (amount / sum(category_totals.values()) * 100) if category_totals else 0
+        }
+        for category, amount in category_totals.items()
+    ]
+    
+    return {
+        "total_spent": sum(category_totals.values()),
+        "categories": sorted(results, key=lambda x: x["amount"], reverse=True),
+        "date_range": {"start": start_date, "end": end_date}
+    }
+
 # Include the router in the main app
 app.include_router(api_router)
 
