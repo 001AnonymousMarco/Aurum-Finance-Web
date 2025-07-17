@@ -1619,7 +1619,7 @@ const Reports = () => {
   );
 };
 
-const Settings = () => {
+const SettingsPage = () => {
   const { user } = useAuth();
   const [activeSection, setActiveSection] = useState('profile');
 
