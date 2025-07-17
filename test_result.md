@@ -297,13 +297,14 @@
 
 ## test_plan:
   current_focus:
-    - "User Authentication System"
-    - "Transaction Management API"
-    - "Dashboard Analytics API"
     - "Authentication UI"
     - "Dashboard with Brand Identity"
+    - "Transaction Management UI"
+    - "Net Worth Tracker UI"
+    - "Budgets and Goals UI"
+    - "Responsive Design and Brand Identity"
   stuck_tasks: []
-  test_all: true
+  test_all: false
   test_priority: "high_first"
 
 ## agent_communication:
