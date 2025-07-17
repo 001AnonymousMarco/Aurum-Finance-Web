@@ -34,7 +34,7 @@ class AurumFinanceAPITester:
             self.test_results["errors"].append(f"{test_name}: {message}")
             print(f"❌ {test_name}: FAILED - {message}")
     
-    def make_request(self, method, endpoint, data=None, auth_required=True):
+    def make_request(self, method, endpoint, data=None, auth_required=True, timeout=30):
         """Make HTTP request with proper headers"""
         url = f"{self.base_url}{endpoint}"
         headers = {"Content-Type": "application/json"}
@@ -42,20 +42,32 @@ class AurumFinanceAPITester:
         if auth_required and self.auth_token:
             headers["Authorization"] = f"Bearer {self.auth_token}"
         
-        try:
-            if method == "GET":
-                response = requests.get(url, headers=headers, timeout=10)
-            elif method == "POST":
-                response = requests.post(url, headers=headers, json=data, timeout=10)
-            elif method == "PUT":
-                response = requests.put(url, headers=headers, json=data, timeout=10)
-            elif method == "DELETE":
-                response = requests.delete(url, headers=headers, timeout=10)
-            
-            return response
-        except Exception as e:
-            print(f"Request error: {e}")
-            return None
+        # Retry mechanism for network issues
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                if method == "GET":
+                    response = requests.get(url, headers=headers, timeout=timeout)
+                elif method == "POST":
+                    response = requests.post(url, headers=headers, json=data, timeout=timeout)
+                elif method == "PUT":
+                    response = requests.put(url, headers=headers, json=data, timeout=timeout)
+                elif method == "DELETE":
+                    response = requests.delete(url, headers=headers, timeout=timeout)
+                
+                return response
+            except requests.exceptions.Timeout:
+                if attempt < max_retries - 1:
+                    print(f"Request timeout, retrying... (attempt {attempt + 1}/{max_retries})")
+                    import time
+                    time.sleep(2)
+                    continue
+                else:
+                    print(f"Request timed out after {max_retries} attempts")
+                    return None
+            except Exception as e:
+                print(f"Request error: {e}")
+                return None
     
     def test_user_registration(self):
         """Test user registration endpoint"""
