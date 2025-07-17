@@ -244,8 +244,34 @@ async def create_transaction(transaction_data: TransactionCreate, current_user: 
     return transaction
 
 @api_router.get("/transactions", response_model=List[Transaction])
-async def get_transactions(current_user: User = Depends(get_current_user)):
-    transactions = await db.transactions.find({"user_id": current_user.id}).to_list(1000)
+async def get_transactions(
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    category: Optional[str] = None,
+    search_query: Optional[str] = None,
+    current_user: User = Depends(get_current_user)
+):
+    # Build query filters
+    query_filter = {"user_id": current_user.id}
+    
+    # Date range filter
+    if start_date or end_date:
+        date_filter = {}
+        if start_date:
+            date_filter["$gte"] = datetime.fromisoformat(start_date.replace('Z', '+00:00'))
+        if end_date:
+            date_filter["$lte"] = datetime.fromisoformat(end_date.replace('Z', '+00:00'))
+        query_filter["date"] = date_filter
+    
+    # Category filter
+    if category:
+        query_filter["category"] = category
+    
+    # Search query filter (searches in description)
+    if search_query:
+        query_filter["description"] = {"$regex": search_query, "$options": "i"}
+    
+    transactions = await db.transactions.find(query_filter).sort("date", -1).to_list(1000)
     return [Transaction(**transaction) for transaction in transactions]
 
 @api_router.delete("/transactions/{transaction_id}")
