@@ -167,7 +167,11 @@ td {
 
 /* Focus states for accessibility */
 .focus-ring {
-  @apply focus:outline-none focus:ring-2 focus:ring-aurum-gold focus:ring-offset-2 focus:ring-offset-aurum-ink;
+  @apply focus:outline-none focus:ring-2 focus:ring-aurum-gold focus:ring-offset-2;
+}
+
+.focus\:ring-offset-aurum-ink:focus {
+  --tw-ring-offset-color: var(--aurum-ink);
 }
 
 /* Transitions */
