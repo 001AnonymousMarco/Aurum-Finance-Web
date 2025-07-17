@@ -137,15 +137,18 @@
 
   - task: "Assets and Liabilities API"
     implemented: true
-    working: "NA"
+    working: true
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
         - working: "NA"
         - agent: "main"
         - comment: "Implemented CRUD operations for assets and liabilities for net worth tracking"
+        - working: true
+        - agent: "testing"
+        - comment: "✅ TESTED: Assets and liabilities CRUD operations fully functional. Create, read, update, delete operations working correctly with proper user association and data validation."
 
   - task: "Budget and Savings Goals API"
     implemented: true
