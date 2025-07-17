@@ -17,6 +17,8 @@ class AurumFinanceAPITester:
         self.base_url = BASE_URL
         self.auth_token = None
         self.user_id = None
+        import time
+        self.timestamp = int(time.time())
         self.test_results = {
             "passed": 0,
             "failed": 0,
