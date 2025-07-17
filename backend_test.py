@@ -537,10 +537,13 @@ class AurumFinanceAPITester:
         
         # Core functionality tests
         self.test_transaction_management()
+        self.test_enhanced_transaction_features()
         self.test_assets_management()
         self.test_liabilities_management()
         self.test_budget_management()
         self.test_savings_goals_management()
+        self.test_debt_management()
+        self.test_reports_endpoints()
         self.test_dashboard_analytics()
         
         # Print final results
