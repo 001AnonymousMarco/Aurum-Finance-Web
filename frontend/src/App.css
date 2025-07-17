@@ -1,38 +1,244 @@
-.App {
-    text-align: center;
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom Aurum Finance color variables */
+:root {
+  --aurum-ink: #0B0D14;
+  --aurum-gold: #F4B400;
 }
 
-.App-logo {
-    height: 40vmin;
-    pointer-events: none;
+/* Custom Tailwind classes for Aurum brand colors */
+.bg-aurum-ink {
+  background-color: var(--aurum-ink);
 }
 
-@media (prefers-reduced-motion: no-preference) {
-    .App-logo {
-        animation: App-logo-spin infinite 20s linear;
-    }
+.bg-aurum-gold {
+  background-color: var(--aurum-gold);
 }
 
-.App-header {
-    background-color: #0f0f10;
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    font-size: calc(10px + 2vmin);
-    color: white;
+.text-aurum-ink {
+  color: var(--aurum-ink);
 }
 
-.App-link {
-    color: #61dafb;
+.text-aurum-gold {
+  color: var(--aurum-gold);
 }
 
-@keyframes App-logo-spin {
-    from {
-        transform: rotate(0deg);
-    }
-    to {
-        transform: rotate(360deg);
-    }
+.border-aurum-gold {
+  border-color: var(--aurum-gold);
+}
+
+.ring-aurum-gold {
+  --tw-ring-color: var(--aurum-gold);
+}
+
+.focus\:ring-aurum-gold:focus {
+  --tw-ring-color: var(--aurum-gold);
+}
+
+.focus\:border-aurum-gold:focus {
+  border-color: var(--aurum-gold);
+}
+
+/* Global styles */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: var(--aurum-ink);
+  color: white;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}
+
+/* Form input styles */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+input[type="date"],
+select,
+textarea {
+  @apply block w-full rounded-md border-gray-600 bg-gray-700 text-white shadow-sm focus:border-aurum-gold focus:ring-aurum-gold;
+}
+
+/* Button styles */
+.btn-primary {
+  @apply bg-aurum-gold text-aurum-ink hover:bg-yellow-500 focus:ring-aurum-gold;
+}
+
+.btn-secondary {
+  @apply bg-gray-600 text-white hover:bg-gray-500 focus:ring-gray-500;
+}
+
+/* Table styles */
+table {
+  border-collapse: collapse;
+}
+
+th {
+  @apply bg-gray-700 text-gray-300;
+}
+
+td {
+  @apply border-gray-700;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #1f2937;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #4b5563;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #6b7280;
+}
+
+/* Animation classes */
+@keyframes shimmer {
+  0% {
+    background-position: -468px 0;
+  }
+  100% {
+    background-position: 468px 0;
+  }
+}
+
+.animate-shimmer {
+  background: linear-gradient(90deg, #374151 25%, #4b5563 50%, #374151 75%);
+  background-size: 400% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+/* Custom chart styles */
+.recharts-tooltip-wrapper {
+  background-color: rgba(55, 65, 81, 0.95) !important;
+  border: 1px solid #6b7280 !important;
+  border-radius: 8px !important;
+  backdrop-filter: blur(10px);
+}
+
+.recharts-tooltip-label {
+  color: white !important;
+}
+
+.recharts-tooltip-item {
+  color: var(--aurum-gold) !important;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+  .stat-card {
+    @apply px-4 py-3;
+  }
+  
+  .stat-card h3 {
+    @apply text-lg;
+  }
+  
+  .stat-card p {
+    @apply text-xl;
+  }
+}
+
+/* Loading states */
+.loading-skeleton {
+  @apply bg-gray-700 animate-pulse rounded;
+}
+
+/* Focus states for accessibility */
+.focus-ring {
+  @apply focus:outline-none focus:ring-2 focus:ring-aurum-gold focus:ring-offset-2 focus:ring-offset-aurum-ink;
+}
+
+/* Transitions */
+.transition-all {
+  transition: all 0.3s ease;
+}
+
+/* Gradient backgrounds */
+.gradient-gold {
+  background: linear-gradient(135deg, var(--aurum-gold) 0%, #ffd700 100%);
+}
+
+.gradient-ink {
+  background: linear-gradient(135deg, var(--aurum-ink) 0%, #1a1d29 100%);
+}
+
+/* Glass morphism effect */
+.glass {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Custom progress bar */
+.progress-bar {
+  @apply w-full bg-gray-600 rounded-full h-2;
+}
+
+.progress-fill {
+  @apply bg-aurum-gold h-2 rounded-full transition-all duration-300;
+}
+
+/* Custom modal styles */
+.modal-overlay {
+  @apply fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4;
+}
+
+.modal-content {
+  @apply bg-gray-800 rounded-lg p-6 max-w-md w-full border border-gray-700;
+}
+
+/* Custom alert styles */
+.alert-success {
+  @apply bg-green-900 border border-green-700 text-green-200 px-4 py-3 rounded;
+}
+
+.alert-error {
+  @apply bg-red-900 border border-red-700 text-red-200 px-4 py-3 rounded;
+}
+
+.alert-warning {
+  @apply bg-yellow-900 border border-yellow-700 text-yellow-200 px-4 py-3 rounded;
+}
+
+/* Custom badge styles */
+.badge-income {
+  @apply bg-green-900 text-green-300 px-2 py-1 rounded-full text-xs;
+}
+
+.badge-expense {
+  @apply bg-red-900 text-red-300 px-2 py-1 rounded-full text-xs;
+}
+
+/* Print styles */
+@media print {
+  body {
+    background-color: white !important;
+    color: black !important;
+  }
+  
+  .no-print {
+    display: none !important;
+  }
 }
