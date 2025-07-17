@@ -505,6 +505,44 @@ async def update_savings_goal(goal_id: str, goal_data: SavingsGoalCreate, curren
     updated_goal = await db.savings_goals.find_one({"id": goal_id, "user_id": current_user.id})
     return SavingsGoal(**updated_goal)
 
+# Debt management endpoints
+@api_router.post("/debts", response_model=Debt)
+async def create_debt(debt_data: DebtCreate, current_user: User = Depends(get_current_user)):
+    debt = Debt(
+        user_id=current_user.id,
+        **debt_data.dict()
+    )
+    await db.debts.insert_one(debt.dict())
+    return debt
+
+@api_router.get("/debts", response_model=List[Debt])
+async def get_debts(current_user: User = Depends(get_current_user)):
+    debts = await db.debts.find({"user_id": current_user.id}).to_list(1000)
+    return [Debt(**debt) for debt in debts]
+
+@api_router.put("/debts/{debt_id}", response_model=Debt)
+async def update_debt(debt_id: str, debt_data: DebtCreate, current_user: User = Depends(get_current_user)):
+    update_data = debt_data.dict()
+    update_data["updated_at"] = datetime.utcnow()
+    
+    result = await db.debts.update_one(
+        {"id": debt_id, "user_id": current_user.id},
+        {"$set": update_data}
+    )
+    
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Debt not found")
+    
+    updated_debt = await db.debts.find_one({"id": debt_id, "user_id": current_user.id})
+    return Debt(**updated_debt)
+
+@api_router.delete("/debts/{debt_id}")
+async def delete_debt(debt_id: str, current_user: User = Depends(get_current_user)):
+    result = await db.debts.delete_one({"id": debt_id, "user_id": current_user.id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Debt not found")
+    return {"message": "Debt deleted successfully"}
+
 # Dashboard analytics
 @api_router.get("/dashboard/summary")
 async def get_dashboard_summary(current_user: User = Depends(get_current_user)):
