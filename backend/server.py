@@ -287,6 +287,86 @@ async def delete_transaction(transaction_id: str, current_user: User = Depends(g
         raise HTTPException(status_code=404, detail="Transaction not found")
     return {"message": "Transaction deleted successfully"}
 
+@api_router.post("/transactions/process-recurring")
+async def process_recurring_transactions():
+    """Process recurring transactions - typically called by a cron job"""
+    today = datetime.now().date()
+    
+    # Get all recurring transactions
+    recurring_transactions = await db.transactions.find({"is_recurring": True}).to_list(1000)
+    
+    processed_count = 0
+    for recurring_transaction in recurring_transactions:
+        transaction = Transaction(**recurring_transaction)
+        
+        # Calculate next due date based on frequency
+        if not transaction.recurring_start_date:
+            continue
+            
+        start_date = transaction.recurring_start_date.date()
+        
+        # Check if we need to create a new instance
+        should_create = False
+        next_date = None
+        
+        if transaction.frequency == "weekly":
+            days_diff = (today - start_date).days
+            if days_diff >= 0 and days_diff % 7 == 0:
+                should_create = True
+                next_date = today
+        elif transaction.frequency == "monthly":
+            # Simple monthly check - same day of month
+            if today.day == start_date.day and today > start_date:
+                # Check if we already created this month's transaction
+                existing = await db.transactions.find_one({
+                    "user_id": transaction.user_id,
+                    "description": transaction.description,
+                    "amount": transaction.amount,
+                    "date": {
+                        "$gte": datetime(today.year, today.month, 1),
+                        "$lte": datetime(today.year, today.month, today.day)
+                    },
+                    "is_recurring": False
+                })
+                
+                if not existing:
+                    should_create = True
+                    next_date = today
+        elif transaction.frequency == "yearly":
+            if today.month == start_date.month and today.day == start_date.day and today.year > start_date.year:
+                # Check if we already created this year's transaction
+                existing = await db.transactions.find_one({
+                    "user_id": transaction.user_id,
+                    "description": transaction.description,
+                    "amount": transaction.amount,
+                    "date": {
+                        "$gte": datetime(today.year, 1, 1),
+                        "$lte": datetime(today.year, 12, 31)
+                    },
+                    "is_recurring": False
+                })
+                
+                if not existing:
+                    should_create = True
+                    next_date = today
+        
+        if should_create and next_date:
+            # Create new transaction instance
+            new_transaction = Transaction(
+                user_id=transaction.user_id,
+                type=transaction.type,
+                amount=transaction.amount,
+                description=f"{transaction.description} (Recurring)",
+                category=transaction.category,
+                date=datetime.combine(next_date, datetime.min.time()),
+                is_recurring=False  # This is an instance, not the recurring template
+            )
+            
+            await db.transactions.insert_one(new_transaction.dict())
+            processed_count += 1
+    
+    return {"message": f"Processed {processed_count} recurring transactions"}
+
 # Asset routes
 @api_router.post("/assets", response_model=Asset)
 async def create_asset(asset_data: AssetCreate, current_user: User = Depends(get_current_user)):
