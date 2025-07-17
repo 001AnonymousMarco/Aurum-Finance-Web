@@ -86,6 +86,9 @@ class Transaction(BaseModel):
     description: str
     category: TransactionCategory
     date: datetime
+    is_recurring: bool = False
+    frequency: Optional[str] = None  # 'weekly', 'monthly', 'yearly'
+    recurring_start_date: Optional[datetime] = None
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
 class TransactionCreate(BaseModel):
@@ -94,6 +97,9 @@ class TransactionCreate(BaseModel):
     description: str
     category: TransactionCategory
     date: datetime
+    is_recurring: bool = False
+    frequency: Optional[str] = None
+    recurring_start_date: Optional[datetime] = None
 
 class Asset(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
