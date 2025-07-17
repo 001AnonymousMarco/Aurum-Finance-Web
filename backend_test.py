@@ -58,9 +58,11 @@ class AurumFinanceAPITester:
         """Test user registration endpoint"""
         print("\n=== Testing User Registration ===")
         
-        # Test successful registration
+        # Test successful registration with unique email
+        import time
+        timestamp = int(time.time())
         user_data = {
-            "email": "sarah.johnson@email.com",
+            "email": f"sarah.johnson.{timestamp}@email.com",
             "password": "SecurePass123!",
             "name": "Sarah Johnson"
         }
