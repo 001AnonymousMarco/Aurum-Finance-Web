@@ -154,6 +154,22 @@ class SavingsGoalCreate(BaseModel):
     target_amount: float
     current_amount: float = 0
 
+class Debt(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    user_id: str
+    debt_name: str
+    total_balance: float
+    interest_rate: float  # APR as percentage
+    minimum_payment: float
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+class DebtCreate(BaseModel):
+    debt_name: str
+    total_balance: float
+    interest_rate: float
+    minimum_payment: float
+
 class NetWorthSnapshot(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     user_id: str
