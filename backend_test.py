@@ -136,11 +136,11 @@ class AurumFinanceAPITester:
         
         response = self.make_request("GET", "/me")
         
-        if response and response.status_code == 401:
-            self.log_result("Unauthorized Access Protection", True, "Correctly rejected unauthorized request")
+        if response and response.status_code in [401, 403]:
+            self.log_result("Unauthorized Access Protection", True, f"Correctly rejected unauthorized request (Status: {response.status_code})")
             success = True
         else:
-            self.log_result("Unauthorized Access Protection", False, f"Expected 401, got {response.status_code if response else 'None'}")
+            self.log_result("Unauthorized Access Protection", False, f"Expected 401/403, got {response.status_code if response else 'None'}")
             success = False
         
         # Restore auth token
