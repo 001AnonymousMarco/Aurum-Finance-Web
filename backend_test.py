@@ -88,7 +88,7 @@ class AurumFinanceAPITester:
         
         # Test successful login
         login_data = {
-            "email": "sarah.johnson@email.com",
+            "email": f"sarah.johnson.{self.timestamp}@email.com",
             "password": "SecurePass123!"
         }
         
